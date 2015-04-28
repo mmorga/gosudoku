@@ -77,7 +77,23 @@ func TestFixedCells(t *testing.T) {
 func TestReduce(t *testing.T) {
 	board, _ := BoardFromString(sampleBoard)
 	board.ReduceCandidates()
-	fmt.Printf("Board:\n%v\n\n", board.cells)
+	// fmt.Printf("Board:\n%v\n\n", board.cells)
+}
+
+func TestNakedSingles(t *testing.T) {
+	board, _ := BoardFromString(sampleBoard)
+	// fmt.Printf("Initial Board:\n\n%v\n\n", board)
+	board.NakedSingles()
+	// fmt.Printf("Final Board:\n\n%v\n\n", board)
+}
+
+func TestHiddenSingles(t *testing.T) {
+	board, _ := BoardFromString(expertBoardSource)
+	fmt.Printf("Initial Board:\n\n%v\n\n", board)
+	board.NakedSingles()
+	fmt.Printf("Naked Singles Board:\n\n%v\n\n", board)
+	board.HiddenSingles()
+	fmt.Printf("Final Board:\n\n%v\n\n", board)
 }
 
 func TestExploration(t *testing.T) {

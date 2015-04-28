@@ -68,10 +68,6 @@ func (v ValueCell) Value() int {
 	return v.value
 }
 
-// func (b *BaseCell) RowForCell() []*Cell {
-// 	return b.board.RowForCell(b)
-// }
-
 func CellFactory(b *Board, x int, y int, val interface{}) (cell Cell) {
 	switch val := val.(type) {
 	case []int:
@@ -106,15 +102,6 @@ func NewValueCell(b *Board, x int, y int, val int) (cell Cell) {
 		},
 		value: val,
 	}
-	// c := new(ValueCell)
-	// c.board = b
-	// c.x = x
-	// c.y = y
-	// c.value = val
-	// if cell, ok := (*c).(*Cell); ok {
-	// 	return cell
-	// }
-	// return nil
 }
 
 func NewCandidateCell(b *Board, x int, y int, val []int) (cell Cell) {
@@ -130,15 +117,6 @@ func NewCandidateCell(b *Board, x int, y int, val []int) (cell Cell) {
 		},
 		candidates: candidates,
 	}
-	// c := new(CandidateCell)
-	// c.board = b
-	// c.x = x
-	// c.y = y
-	// c.candidates = make(map[int]bool, len(val))
-	// for _, key := range val {
-	// 	c.candidates[key] = true
-	// }
-	// return c
 }
 
 func NewAllCandidatesCell(b *Board, x int, y int) (cell Cell) {
@@ -161,21 +139,4 @@ func NewAllCandidatesCell(b *Board, x int, y int) (cell Cell) {
 		},
 		candidates: candidates,
 	}
-	// c := new(CandidateCell)
-	// c.board = b
-	// c.x = x
-	// c.y = y
-	// c.candidates = map[int]bool{
-	// 	1: true,
-	// 	2: true,
-	// 	3: true,
-	// 	4: true,
-	// 	5: true,
-	// 	6: true,
-	// 	7: true,
-	// 	8: true,
-	// 	9: true,
-	// }
-
-	// return c
 }

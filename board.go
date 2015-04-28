@@ -1,6 +1,7 @@
 package sudoku
 
 import (
+	"bytes"
 	"fmt"
 	"strconv"
 	"strings"
@@ -38,10 +39,6 @@ func BoardFromString(s string) (b *Board, err error) {
 				val = sval
 			}
 			b.cells[row][col] = CellFactory(b, col, row, val)
-			// 	b.cells[row][col] = NewAllCandidatesCell(b, col, row)
-			// } else {
-			// 	b.cells[row][col] = NewFixedCell(b, col, row, val)
-			// }
 		}
 	}
 	return b, err
@@ -56,6 +53,25 @@ func isFixedCell(cell Cell) bool {
 
 func (b Board) FixedCells() (cells []Cell) {
 	cells = b.SelectBoardCells(isFixedCell)
+	return cells
+}
+
+func isValueCell(cell Cell) bool {
+	_, ok := cell.(ValueCell)
+	return ok
+}
+
+func isValueOrFixedCell(cell Cell) bool {
+	return isValueCell(cell) || isFixedCell(cell)
+}
+
+func (b Board) ValueAndFixedCells() (cells []Cell) {
+	cells = b.SelectBoardCells(isValueOrFixedCell)
+	return cells
+}
+
+func (b Board) ValueCells() (cells []Cell) {
+	cells = b.SelectBoardCells(isValueCell)
 	return cells
 }
 
@@ -150,18 +166,121 @@ func flatten(nestedCells [][]Cell) (cells []Cell) {
 	return cells
 }
 
+func (b Board) String() string {
+	buf := bytes.NewBufferString("")
+	buf.WriteString("\n")
+	for rowIdx, row := range b.cells {
+		if rowIdx == 3 || rowIdx == 6 {
+			buf.WriteString(" ------+-------+------\n")
+		}
+		for colIdx, cell := range row {
+			if colIdx == 3 || colIdx == 6 {
+				buf.WriteString(" |")
+			}
+			cs := strconv.Itoa(cell.Value())
+			if cs == "0" {
+				cs = "."
+			}
+			buf.WriteString(" ")
+			buf.WriteString(cs)
+		}
+		buf.WriteString("\n")
+	}
+	return buf.String()
+}
+
 func (b Board) ReduceCandidates() {
 	for _, candidateCell := range b.CandidateCells() {
 		seqCells := b.SequenceCellsForCell(candidateCell)
-		fixedCells := SelectCells(seqCells, isFixedCell)
-		fixedValues := MapCellValues(fixedCells)
-		candidateCell.ReduceCandidates(fixedValues)
-		/*
-			For each candidate cell
-				Get set of fixed values for each cell row, column, and group
-				delete each fixed value from cell's candidates
-				if len(cell.candidates) == 1 { convert cell to ValueCell, found = true }
-			end
-		*/
+		valueCells := SelectCells(seqCells, isValueOrFixedCell)
+		values := MapCellValues(valueCells)
+		candidateCell.ReduceCandidates(values)
 	}
 }
+
+func (b Board) ReplaceCellWithNewValueCell(oldCell Cell, val int) {
+	x := oldCell.X()
+	y := oldCell.Y()
+	b.cells[y][x] = NewValueCell(&b, x, y, val)
+}
+
+func (b Board) NakedSingles() {
+	found := true
+	for found {
+		b.ReduceCandidates()
+		found = false
+		for _, candidateCell := range b.CandidateCells() {
+			if len(candidateCell.Candidates()) == 1 {
+				b.ReplaceCellWithNewValueCell(candidateCell, (candidateCell.Candidates())[0])
+				found = true
+			}
+		}
+	}
+}
+
+func candidateVals(cells []Cell) (vals []int) {
+	canVals := make(map[int](bool), 9)
+	for _, cell := range cells {
+		for _, val := range cell.Candidates() {
+			canVals[val] = true
+		}
+	}
+	for val := range canVals {
+		vals = append(vals, val)
+	}
+	return vals
+}
+
+func hasVal(vals []int, val int) bool {
+	for _, v := range vals {
+		if v == val {
+			return true
+		}
+	}
+	return false
+}
+
+func hasCandidateVal(cells []Cell, val int) (foundCells []Cell) {
+	for _, cell := range cells {
+		if hasVal(cell.Candidates(), val) {
+			foundCells = append(foundCells, cell)
+		}
+	}
+	return foundCells
+}
+
+func (b Board) HiddenSingles() {
+	for rowId, row := range b.cells {
+		candidateCells := SelectCells(row, isCandidateCell)
+		candidateVals := candidateVals(candidateCells)
+		for _, val := range candidateVals {
+			hasValCells := hasCandidateVal(candidateCells, val)
+			if len(hasValCells) == 1 {
+				b.ReplaceCellWithNewValueCell(hasValCells[0], val)
+				fmt.Printf("Hidden Single Found in row %d, col: %d\n", rowId, hasValCells[0].X())
+			}
+		}
+	}
+}
+
+// # Hidden n strategy
+// 1. set status to false
+// 2. For each in board sequences
+//   a. is there a set of size n for any array entries that those n values
+// only exist together in exists in only n place(s)?
+//     1. set that cell value to n
+//     2. remove all n values from the other array entries
+//     3. set status to true
+// 3. return status
+//
+// For a. above what does this entail?
+// 1. collect the unique set of values that occur in all array entries
+// 2. for each combination(n)
+//   a. collect the index of every array entry in which it occurs
+// 3. return the collection of value-index pairs with a count of n
+//
+//
+// Hidden n means in a sequence, n values occur in n cells and not in any
+// other cells of the sequence.
+// For n > 2, the n cells must each contain 2..n values and no other values.
+// Then remove all other candidate values from the n cells.

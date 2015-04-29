@@ -50,24 +50,29 @@ func TestBoardFromString(t *testing.T) {
 	if err != nil {
 		t.Errorf("Unable to create board from string (%v):\n%v", err, expertBoardSource)
 	}
-	actual := board.Cell(1, 4)
+	actualCell := board.Cell(1, 4)
 	if err != nil {
 		t.Errorf("Unable to get cell from board (%v)", err)
 	}
 	expected := []int{1, 2, 3, 4, 5, 6, 7, 8, 9}
-	candidates := actual.Candidates()
+	candidateCell, ok := actualCell.(CandidateCell)
+	if !ok {
+		t.Errorf("Unable to cast Cell as a CandidateCell: %v", candidateCell)
+	}
+
+	candidates := candidateCell.Candidates()
 	if !CompareSlices(candidates, expected) {
 		t.Errorf("Cell Candidates were different than expected:\nExpected: %v\nActual: %v", expected, candidates)
 	}
 }
 
-func TestFixedCells(t *testing.T) {
+func TestfixedCells(t *testing.T) {
 	board, err := BoardFromString(expertBoardSource)
 	if err != nil {
 		t.Errorf("Unable to create board from string (%v):\n%v", err, expertBoardSource)
 	}
 
-	fixedCells := board.FixedCells()
+	fixedCells := board.fixedCells()
 	fixedCellsLen := len(fixedCells)
 	if fixedCellsLen != 25 {
 		t.Errorf("Expected to find %v fixed cells, actually was %d", 25, fixedCellsLen)
@@ -82,23 +87,27 @@ func TestReduce(t *testing.T) {
 
 func TestNakedSingles(t *testing.T) {
 	board, _ := BoardFromString(sampleBoard)
-	// fmt.Printf("Initial Board:\n\n%v\n\n", board)
 	board.NakedSingles()
-	// fmt.Printf("Final Board:\n\n%v\n\n", board)
+	if !board.IsSolved() {
+		t.Errorf("Expected Board to be solved\n%v", board)
+	}
 }
 
 func TestHiddenSingles(t *testing.T) {
 	board, _ := BoardFromString(expertBoardSource)
-	fmt.Printf("Initial Board:\n\n%v\n\n", board)
+	// fmt.Printf("Initial Board:\n\n%v\n\n", board)
 	board.NakedSingles()
-	fmt.Printf("Naked Singles Board:\n\n%v\n\n", board)
+	// fmt.Printf("Naked Singles Board:\n\n%v\n\n", board)
 	board.HiddenSingles()
-	fmt.Printf("Final Board:\n\n%v\n\n", board)
+	// fmt.Printf("Final Board:\n\n%v\n\n", board)
+	if board.IsSolved() {
+		t.Errorf("Expected Board to NOT be solved\n%v", board)
+	}
 }
 
 func TestExploration(t *testing.T) {
 	dest := make([]int, 9, 9)
-	for i := 0; i < 9; i += 1 {
+	for i := 0; i < 9; i++ {
 		dest[i] = i
 	}
 	src := []int{10, 11, 12}

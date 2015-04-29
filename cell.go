@@ -6,84 +6,82 @@ type Cell interface {
 	X() int
 	Y() int
 	Value() int
+}
+
+type CandidateCell interface {
 	Candidates() []int
 	ReduceCandidates([]int)
 }
 
-type BaseCell struct {
+type baseCell struct {
 	board *Board
 	x, y  int
 }
 
-type CandidateCell struct {
-	BaseCell
+type candidateCell struct {
+	baseCell
 	candidates map[int]bool
 }
 
-type ValueCell struct {
-	BaseCell
+type valueCell struct {
+	baseCell
 	value int
 }
 
-type FixedCell struct {
-	ValueCell
+type fixedCell struct {
+	valueCell
 }
 
-func (b BaseCell) X() int {
+func (b baseCell) X() int {
 	return b.x
 }
 
-func (b BaseCell) Y() int {
+func (b baseCell) Y() int {
 	return b.y
 }
 
-func (b BaseCell) Value() int {
-	// TODO: What's the right thing to do here?
+func (b baseCell) Value() int {
 	return 0
 }
 
-func (BaseCell) Candidates() []int {
-	return make([]int, 0, 0)
-}
-
-func (BaseCell) ReduceCandidates([]int) {
-	panic("Invalid to Reduce Candidates on me")
-}
-
-func (c CandidateCell) ReduceCandidates(vals []int) {
+func (c candidateCell) ReduceCandidates(vals []int) {
 	for _, v := range vals {
 		delete(c.candidates, v)
 	}
 }
 
-func (c CandidateCell) Candidates() (candidates []int) {
-	for k, _ := range c.candidates {
-		candidates = append(candidates, k)
+func (c candidateCell) Candidates() (candidates []int) {
+	for candidate := range c.candidates {
+		candidates = append(candidates, candidate)
 	}
 	sort.Ints(candidates)
 	return candidates
 }
 
-func (v ValueCell) Value() int {
+func (v valueCell) Value() int {
 	return v.value
 }
 
 func CellFactory(b *Board, x int, y int, val interface{}) (cell Cell) {
 	switch val := val.(type) {
 	case []int:
-		cell = NewCandidateCell(b, x, y, val)
+		cell = newCandidateCell(b, x, y, val)
 	case int:
-		cell = NewFixedCell(b, x, y, val)
+		if val >= 1 && val <= 9 {
+			cell = newFixedCell(b, x, y, val)
+		} else {
+			cell = newAllCandidatesCell(b, x, y)
+		}
 	case string:
-		cell = NewAllCandidatesCell(b, x, y)
+		cell = newAllCandidatesCell(b, x, y)
 	}
 	return cell
 }
 
-func NewFixedCell(b *Board, x int, y int, val int) (cell Cell) {
-	return FixedCell{
-		ValueCell: ValueCell{
-			BaseCell: BaseCell{
+func newFixedCell(b *Board, x int, y int, val int) (cell Cell) {
+	return fixedCell{
+		valueCell: valueCell{
+			baseCell: baseCell{
 				board: b,
 				x:     x,
 				y:     y,
@@ -93,9 +91,9 @@ func NewFixedCell(b *Board, x int, y int, val int) (cell Cell) {
 	}
 }
 
-func NewValueCell(b *Board, x int, y int, val int) (cell Cell) {
-	return ValueCell{
-		BaseCell: BaseCell{
+func newValueCell(b *Board, x int, y int, val int) (cell Cell) {
+	return valueCell{
+		baseCell: baseCell{
 			board: b,
 			x:     x,
 			y:     y,
@@ -104,13 +102,13 @@ func NewValueCell(b *Board, x int, y int, val int) (cell Cell) {
 	}
 }
 
-func NewCandidateCell(b *Board, x int, y int, val []int) (cell Cell) {
+func newCandidateCell(b *Board, x int, y int, val []int) (cell Cell) {
 	candidates := make(map[int]bool, len(val))
 	for _, key := range val {
 		candidates[key] = true
 	}
-	return CandidateCell{
-		BaseCell: BaseCell{
+	return candidateCell{
+		baseCell: baseCell{
 			board: b,
 			x:     x,
 			y:     y,
@@ -119,7 +117,7 @@ func NewCandidateCell(b *Board, x int, y int, val []int) (cell Cell) {
 	}
 }
 
-func NewAllCandidatesCell(b *Board, x int, y int) (cell Cell) {
+func newAllCandidatesCell(b *Board, x int, y int) (cell Cell) {
 	candidates := map[int]bool{
 		1: true,
 		2: true,
@@ -131,8 +129,8 @@ func NewAllCandidatesCell(b *Board, x int, y int) (cell Cell) {
 		8: true,
 		9: true,
 	}
-	return CandidateCell{
-		BaseCell: BaseCell{
+	return candidateCell{
+		baseCell: baseCell{
 			board: b,
 			x:     x,
 			y:     y,

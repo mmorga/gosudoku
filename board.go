@@ -3,6 +3,7 @@ package sudoku
 import (
 	"bytes"
 	"fmt"
+	"sort"
 	"strconv"
 	"strings"
 )
@@ -30,57 +31,83 @@ func BoardFromString(s string) (b *Board, err error) {
 	b.cells = make([][]Cell, 9, 9)
 	splice := strings.Split(s, "\n")
 	for row, rowString := range splice {
-		b.cells[row] = make([]Cell, 9, 9)
-		for col, cellString := range rowString {
-			var val interface{}
-			sval := fmt.Sprintf("%c", cellString)
-			val, err := strconv.Atoi(sval)
-			if err != nil {
-				val = sval
+		if len(rowString) > 0 {
+			b.cells[row] = make([]Cell, 9, 9)
+			for col, cellString := range rowString {
+				var val interface{}
+				sval := fmt.Sprintf("%c", cellString)
+				val, err := strconv.Atoi(sval)
+				if err != nil {
+					val = sval
+				}
+				b.cells[row][col] = CellFactory(b, col, row, val)
 			}
-			b.cells[row][col] = CellFactory(b, col, row, val)
 		}
 	}
 	return b, err
 }
 
+func isCompleteSet(vals []int) bool {
+	if len(vals) != 9 {
+		return false
+	}
+	sort.Ints(vals)
+
+	for i := 1; i < 10; i++ {
+		if i != vals[i-1] {
+			return false
+		}
+	}
+	return true
+}
+
+func (b Board) IsSolved() bool {
+	for _, seq := range b.Sequences() {
+		vals := MapCellValues(SelectCells(seq, isValueOrfixedCell))
+		if !isCompleteSet(vals) {
+			return false
+		}
+	}
+	return true
+}
+
 type cellFilter func(Cell) bool
 
-func isFixedCell(cell Cell) bool {
-	_, ok := cell.(FixedCell)
+func isfixedCell(cell Cell) bool {
+	_, ok := cell.(fixedCell)
 	return ok
 }
 
-func (b Board) FixedCells() (cells []Cell) {
-	cells = b.SelectBoardCells(isFixedCell)
+func (b Board) fixedCells() (cells []Cell) {
+	cells = b.SelectBoardCells(isfixedCell)
 	return cells
 }
 
 func isValueCell(cell Cell) bool {
-	_, ok := cell.(ValueCell)
+	_, ok := cell.(valueCell)
 	return ok
 }
 
-func isValueOrFixedCell(cell Cell) bool {
-	return isValueCell(cell) || isFixedCell(cell)
+func isValueOrfixedCell(cell Cell) bool {
+	return isValueCell(cell) || isfixedCell(cell)
 }
 
-func (b Board) ValueAndFixedCells() (cells []Cell) {
-	cells = b.SelectBoardCells(isValueOrFixedCell)
+func (b Board) ValueAndfixedCells() (cells []Cell) {
+	cells = b.SelectBoardCells(isValueOrfixedCell)
 	return cells
 }
 
-func (b Board) ValueCells() (cells []Cell) {
+func (b Board) valueCells() (cells []Cell) {
 	cells = b.SelectBoardCells(isValueCell)
 	return cells
 }
 
 func isCandidateCell(cell Cell) bool {
-	_, ok := cell.(CandidateCell)
+	_, ok := cell.(candidateCell)
 	return ok
 }
 
-func (b Board) CandidateCells() (cells []Cell) {
+func (b Board) candidateCells() (cells []Cell) {
 	cells = b.SelectBoardCells(isCandidateCell)
 	return cells
 }
@@ -113,11 +140,15 @@ func (b Board) RowForCell(c Cell) []Cell {
 	return b.cells[c.Y()][:]
 }
 
-func (b Board) ColForCell(c Cell) (seq []Cell) {
-	for i, _ := range b.cells {
-		seq = append(seq[:], b.cells[i][c.X()])
+func (b Board) column(colIdx int) (seq []Cell) {
+	for _, row := range b.cells {
+		seq = append(seq, row[colIdx])
 	}
 	return seq
+}
+
+func (b Board) ColForCell(c Cell) (seq []Cell) {
+	return b.column(c.X())
 }
 
 func groupBounds(idx int) (xMin, xMax, yMin, yMax int) {
@@ -144,6 +175,21 @@ func (b Board) group(idx int) (seq []Cell) {
 
 func (b Board) GroupForCell(c Cell) (seq []Cell) {
 	return b.group(groupIdxFor(c.X(), c.Y()))
+}
+
+func (b Board) Sequences() (seqs [][]Cell) {
+	// Rows
+	for _, r := range b.cells {
+		seqs = append(seqs, r)
+	}
+	for colIdx := 0; colIdx < 9; colIdx++ {
+		seqs = append(seqs, b.column(colIdx))
+	}
+	for groupIdx := 0; groupIdx < 9; groupIdx++ {
+		seqs = append(seqs, b.group(groupIdx))
+	}
+
+	return seqs
 }
 
 func (b Board) SequencesForCell(c Cell) (seqs [][]Cell) {
@@ -190,39 +236,48 @@ func (b Board) String() string {
 }
 
 func (b Board) ReduceCandidates() {
-	for _, candidateCell := range b.CandidateCells() {
-		seqCells := b.SequenceCellsForCell(candidateCell)
-		valueCells := SelectCells(seqCells, isValueOrFixedCell)
+	for _, cell := range b.candidateCells() {
+		seqCells := b.SequenceCellsForCell(cell)
+		valueCells := SelectCells(seqCells, isValueOrfixedCell)
 		values := MapCellValues(valueCells)
-		candidateCell.ReduceCandidates(values)
+		if candidateCell, ok := cell.(CandidateCell); ok {
+			candidateCell.ReduceCandidates(values)
+		}
 	}
 }
 
 func (b Board) ReplaceCellWithNewValueCell(oldCell Cell, val int) {
 	x := oldCell.X()
 	y := oldCell.Y()
-	b.cells[y][x] = NewValueCell(&b, x, y, val)
+	b.cells[y][x] = newValueCell(&b, x, y, val)
 }
 
-func (b Board) NakedSingles() {
+func (b Board) NakedSingles() bool {
+	foundAny := false
 	found := true
 	for found {
 		b.ReduceCandidates()
 		found = false
-		for _, candidateCell := range b.CandidateCells() {
-			if len(candidateCell.Candidates()) == 1 {
-				b.ReplaceCellWithNewValueCell(candidateCell, (candidateCell.Candidates())[0])
-				found = true
+		for _, cell := range b.candidateCells() {
+			if candidateCell, ok := cell.(CandidateCell); ok {
+				if len(candidateCell.Candidates()) == 1 {
+					b.ReplaceCellWithNewValueCell(cell, (candidateCell.Candidates())[0])
+					found = true
+					foundAny = true
+				}
 			}
 		}
 	}
+	return foundAny
 }
 
 func candidateVals(cells []Cell) (vals []int) {
 	canVals := make(map[int](bool), 9)
 	for _, cell := range cells {
-		for _, val := range cell.Candidates() {
-			canVals[val] = true
+		if candidateCell, ok := cell.(CandidateCell); ok {
+			for _, val := range candidateCell.Candidates() {
+				canVals[val] = true
+			}
 		}
 	}
 	for val := range canVals {
@@ -242,25 +297,36 @@ func hasVal(vals []int, val int) bool {
 
 func hasCandidateVal(cells []Cell, val int) (foundCells []Cell) {
 	for _, cell := range cells {
-		if hasVal(cell.Candidates(), val) {
-			foundCells = append(foundCells, cell)
+		if candidateCell, ok := cell.(CandidateCell); ok {
+			if hasVal(candidateCell.Candidates(), val) {
+				foundCells = append(foundCells, cell)
+			}
 		}
 	}
 	return foundCells
 }
 
-func (b Board) HiddenSingles() {
-	for rowId, row := range b.cells {
-		candidateCells := SelectCells(row, isCandidateCell)
-		candidateVals := candidateVals(candidateCells)
-		for _, val := range candidateVals {
-			hasValCells := hasCandidateVal(candidateCells, val)
-			if len(hasValCells) == 1 {
-				b.ReplaceCellWithNewValueCell(hasValCells[0], val)
-				fmt.Printf("Hidden Single Found in row %d, col: %d\n", rowId, hasValCells[0].X())
+func (b Board) HiddenSingles() bool {
+	foundAny := false
+	found := true
+	for found {
+		b.ReduceCandidates()
+		found = false
+		for _, row := range b.Sequences() {
+			candidateCells := SelectCells(row, isCandidateCell)
+			candidateVals := candidateVals(candidateCells)
+			for _, val := range candidateVals {
+				hasValCells := hasCandidateVal(candidateCells, val)
+				if len(hasValCells) == 1 {
+					b.ReplaceCellWithNewValueCell(hasValCells[0], val)
+					// fmt.Printf("Hidden Single Found in row %d, col: %d\n", rowIdx, hasValCells[0].X())
+					found = true
+					foundAny = true
+				}
 			}
 		}
 	}
+	return foundAny
 }
 
 // # Hidden n strategy

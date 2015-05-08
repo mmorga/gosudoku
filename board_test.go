@@ -82,7 +82,6 @@ func TestfixedCells(t *testing.T) {
 func TestReduce(t *testing.T) {
 	board, _ := BoardFromString(sampleBoard)
 	board.ReduceCandidates()
-	// fmt.Printf("Board:\n%v\n\n", board.cells)
 }
 
 func TestNakedSingles(t *testing.T) {
@@ -95,11 +94,8 @@ func TestNakedSingles(t *testing.T) {
 
 func TestHiddenSingles(t *testing.T) {
 	board, _ := BoardFromString(expertBoardSource)
-	// fmt.Printf("Initial Board:\n\n%v\n\n", board)
 	board.NakedSingles()
-	// fmt.Printf("Naked Singles Board:\n\n%v\n\n", board)
 	board.HiddenSingles()
-	// fmt.Printf("Final Board:\n\n%v\n\n", board)
 	if board.IsSolved() {
 		t.Errorf("Expected Board to NOT be solved\n%v", board)
 	}

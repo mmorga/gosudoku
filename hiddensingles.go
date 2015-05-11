@@ -10,10 +10,9 @@ func (b Board) HiddenSingles() bool {
 			candidateCells := SelectCells(row, isCandidateCell)
 			candidateVals := candidateVals(candidateCells)
 			for _, val := range candidateVals {
-				hasValCells := hasCandidateVal(candidateCells, val)
+				hasValCells := CandidateCellsWithAnyValues(candidateCells, []int{val})
 				if len(hasValCells) == 1 {
 					b.ReplaceCellWithNewValueCell(hasValCells[0], val)
-					// fmt.Printf("Hidden Single Found in row %d, col: %d\n", rowIdx, hasValCells[0].X())
 					found = true
 					foundAny = true
 				}
@@ -21,41 +20,6 @@ func (b Board) HiddenSingles() bool {
 		}
 	}
 	return foundAny
-}
-
-func hasCandidateVal(cells Unit, val int) (foundCells Unit) {
-	for _, cell := range cells {
-		if candidateCell, ok := cell.(CandidateCell); ok {
-			if hasVal(candidateCell.Candidates(), val) {
-				foundCells = append(foundCells, cell)
-			}
-		}
-	}
-	return foundCells
-}
-
-func hasVal(vals []int, val int) bool {
-	for _, v := range vals {
-		if v == val {
-			return true
-		}
-	}
-	return false
-}
-
-func candidateVals(cells Unit) (vals []int) {
-	canVals := make(map[int](bool), 9)
-	for _, cell := range cells {
-		if candidateCell, ok := cell.(CandidateCell); ok {
-			for _, val := range candidateCell.Candidates() {
-				canVals[val] = true
-			}
-		}
-	}
-	for val := range canVals {
-		vals = append(vals, val)
-	}
-	return vals
 }
 
 // # Hidden n strategy

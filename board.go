@@ -3,13 +3,12 @@ package sudoku
 import (
 	"bytes"
 	"fmt"
-	"sort"
 	"strconv"
 	"strings"
 )
 
 type Board struct {
-	cells [][]Cell
+	cells []Unit
 }
 
 func (b Board) Cell(x, y int) (c Cell) {
@@ -28,7 +27,7 @@ func BoardFromArray(a [][]int) (b *Board, err error) {
 
 func BoardFromString(s string) (b *Board, err error) {
 	b = new(Board)
-	b.cells = make([][]Cell, 9, 9)
+	b.cells = make([]Unit, 9, 9)
 	splice := strings.Split(s, "\n")
 	for row, rowString := range splice {
 		if len(rowString) > 0 {
@@ -47,29 +46,17 @@ func BoardFromString(s string) (b *Board, err error) {
 	return b, err
 }
 
-func isCompleteSet(vals []int) bool {
-	if len(vals) != 9 {
-		return false
-	}
-	sort.Ints(vals)
-
-	for i := 1; i < 10; i++ {
-		if i != vals[i-1] {
-			return false
-		}
-	}
-	return true
-}
-
 func (b Board) IsSolved() bool {
 	for _, seq := range b.Units() {
-		vals := MapCellValues(SelectCells(seq, isValueOrfixedCell))
+		vals := MapCellValues(SelectCells(seq, isValueOrFixedCell))
 		if !isCompleteSet(vals) {
 			return false
 		}
 	}
 	return true
 }
+
+// BEGIN REFACTOR AREA
 
 type cellFilter func(Cell) bool
 
@@ -78,28 +65,13 @@ func isfixedCell(cell Cell) bool {
 	return ok
 }
 
-func (b Board) fixedCells() (cells Unit) {
-	cells = b.SelectBoardCells(isfixedCell)
-	return cells
-}
-
 func isValueCell(cell Cell) bool {
 	_, ok := cell.(valueCell)
 	return ok
 }
 
-func isValueOrfixedCell(cell Cell) bool {
+func isValueOrFixedCell(cell Cell) bool {
 	return isValueCell(cell) || isfixedCell(cell)
-}
-
-func (b Board) ValueAndfixedCells() (cells Unit) {
-	cells = b.SelectBoardCells(isValueOrfixedCell)
-	return cells
-}
-
-func (b Board) valueCells() (cells Unit) {
-	cells = b.SelectBoardCells(isValueCell)
-	return cells
 }
 
 func isCandidateCell(cell Cell) bool {
@@ -107,15 +79,20 @@ func isCandidateCell(cell Cell) bool {
 	return ok
 }
 
+// END REFACTOR AREA
+
+// TODO - get rid of this
 func (b Board) candidateCells() (cells Unit) {
 	cells = b.SelectBoardCells(isCandidateCell)
 	return cells
 }
 
+// TODO - get rid of this
 func (b Board) AllCells() (cells Unit) {
-	return flatten(b.cells)
+	return FlattenUnitSlice(b.cells)
 }
 
+// TODO - get rid of this
 func (b Board) SelectBoardCells(cellMatches cellFilter) (cells Unit) {
 	return SelectCells(b.AllCells(), cellMatches)
 }
@@ -177,10 +154,7 @@ func (b Board) GroupForCell(c Cell) (seq Unit) {
 	return b.group(groupIdxFor(c.X(), c.Y()))
 }
 
-type Unit []Cell
-
 func (b Board) Units() (seqs []Unit) {
-	// Rows
 	for _, r := range b.cells {
 		seqs = append(seqs, r)
 	}
@@ -194,7 +168,7 @@ func (b Board) Units() (seqs []Unit) {
 	return seqs
 }
 
-func (b Board) UnitsForCell(c Cell) (seqs [][]Cell) {
+func (b Board) UnitsForCell(c Cell) (seqs []Unit) {
 	seqs = append(seqs, b.ColForCell(c))
 	seqs = append(seqs, b.RowForCell(c))
 	seqs = append(seqs, b.GroupForCell(c))
@@ -202,16 +176,7 @@ func (b Board) UnitsForCell(c Cell) (seqs [][]Cell) {
 }
 
 func (b Board) UnitCellsForCell(c Cell) (seqs Unit) {
-	return flatten(b.UnitsForCell(c))
-}
-
-func flatten(nestedCells [][]Cell) (cells Unit) {
-	for _, row := range nestedCells {
-		for _, cell := range row {
-			cells = append(cells, cell)
-		}
-	}
-	return cells
+	return FlattenUnitSlice(b.UnitsForCell(c))
 }
 
 func (b Board) String() string {

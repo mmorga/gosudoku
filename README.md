@@ -13,3 +13,8 @@ func main() {
 http://www.sudokuwiki.org/
 
 http://www.soduko.org/sudoku-list.php
+
+
+TODO:
+
+Change strategies to operate at the unit level in preparation for concurrency

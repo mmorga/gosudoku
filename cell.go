@@ -11,6 +11,7 @@ type Cell interface {
 }
 
 type CandidateCell interface {
+	Cell
 	Candidates() []int
 	ReduceCandidates([]int)
 }

@@ -66,18 +66,18 @@ func TestBoardFromString(t *testing.T) {
 	}
 }
 
-func TestfixedCells(t *testing.T) {
-	board, err := BoardFromString(expertBoardSource)
-	if err != nil {
-		t.Errorf("Unable to create board from string (%v):\n%v", err, expertBoardSource)
-	}
+// func TestfixedCells(t *testing.T) {
+// 	board, err := BoardFromString(expertBoardSource)
+// 	if err != nil {
+// 		t.Errorf("Unable to create board from string (%v):\n%v", err, expertBoardSource)
+// 	}
 
-	fixedCells := board.fixedCells()
-	fixedCellsLen := len(fixedCells)
-	if fixedCellsLen != 25 {
-		t.Errorf("Expected to find %v fixed cells, actually was %d", 25, fixedCellsLen)
-	}
-}
+// 	fixedCells := board.fixedCells()
+// 	fixedCellsLen := len(fixedCells)
+// 	if fixedCellsLen != 25 {
+// 		t.Errorf("Expected to find %v fixed cells, actually was %d", 25, fixedCellsLen)
+// 	}
+// }
 
 func TestReduce(t *testing.T) {
 	board, _ := BoardFromString(sampleBoard)

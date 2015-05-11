@@ -16,7 +16,7 @@ func Solve(filename string) {
 	solved := 0
 	for _, title := range titles {
 		board, _ := BoardFromString(puzzles[title])
-		for (board.NakedSingles() || board.HiddenSingles()) && !board.IsSolved() {
+		for (board.NakedPairs() || board.NakedSingles() || board.HiddenSingles()) && !board.IsSolved() {
 		}
 		if board.IsSolved() {
 			solved++

@@ -5,7 +5,9 @@ import "sort"
 type Cell interface {
 	X() int
 	Y() int
+	Board() *Board
 	Value() int
+	Equal(Cell) bool
 }
 
 type CandidateCell interface {
@@ -40,8 +42,18 @@ func (b baseCell) Y() int {
 	return b.y
 }
 
+func (b baseCell) Board() *Board {
+	return b.board
+}
+
 func (b baseCell) Value() int {
 	return 0
+}
+
+func (b baseCell) Equal(c1 Cell) bool {
+	return b.Board() == c1.Board() &&
+		b.X() == c1.X() &&
+		b.Y() == c1.Y()
 }
 
 func (c candidateCell) ReduceCandidates(vals []int) {

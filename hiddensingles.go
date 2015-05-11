@@ -6,7 +6,7 @@ func (b Board) HiddenSingles() bool {
 	for found {
 		b.ReduceCandidates()
 		found = false
-		for _, row := range b.Sequences() {
+		for _, row := range b.Units() {
 			candidateCells := SelectCells(row, isCandidateCell)
 			candidateVals := candidateVals(candidateCells)
 			for _, val := range candidateVals {
@@ -23,7 +23,7 @@ func (b Board) HiddenSingles() bool {
 	return foundAny
 }
 
-func hasCandidateVal(cells []Cell, val int) (foundCells []Cell) {
+func hasCandidateVal(cells Unit, val int) (foundCells Unit) {
 	for _, cell := range cells {
 		if candidateCell, ok := cell.(CandidateCell); ok {
 			if hasVal(candidateCell.Candidates(), val) {
@@ -43,7 +43,7 @@ func hasVal(vals []int, val int) bool {
 	return false
 }
 
-func candidateVals(cells []Cell) (vals []int) {
+func candidateVals(cells Unit) (vals []int) {
 	canVals := make(map[int](bool), 9)
 	for _, cell := range cells {
 		if candidateCell, ok := cell.(CandidateCell); ok {

@@ -62,7 +62,7 @@ func isCompleteSet(vals []int) bool {
 }
 
 func (b Board) IsSolved() bool {
-	for _, seq := range b.Sequences() {
+	for _, seq := range b.Units() {
 		vals := MapCellValues(SelectCells(seq, isValueOrfixedCell))
 		if !isCompleteSet(vals) {
 			return false
@@ -78,7 +78,7 @@ func isfixedCell(cell Cell) bool {
 	return ok
 }
 
-func (b Board) fixedCells() (cells []Cell) {
+func (b Board) fixedCells() (cells Unit) {
 	cells = b.SelectBoardCells(isfixedCell)
 	return cells
 }
@@ -92,12 +92,12 @@ func isValueOrfixedCell(cell Cell) bool {
 	return isValueCell(cell) || isfixedCell(cell)
 }
 
-func (b Board) ValueAndfixedCells() (cells []Cell) {
+func (b Board) ValueAndfixedCells() (cells Unit) {
 	cells = b.SelectBoardCells(isValueOrfixedCell)
 	return cells
 }
 
-func (b Board) valueCells() (cells []Cell) {
+func (b Board) valueCells() (cells Unit) {
 	cells = b.SelectBoardCells(isValueCell)
 	return cells
 }
@@ -107,20 +107,20 @@ func isCandidateCell(cell Cell) bool {
 	return ok
 }
 
-func (b Board) candidateCells() (cells []Cell) {
+func (b Board) candidateCells() (cells Unit) {
 	cells = b.SelectBoardCells(isCandidateCell)
 	return cells
 }
 
-func (b Board) AllCells() (cells []Cell) {
+func (b Board) AllCells() (cells Unit) {
 	return flatten(b.cells)
 }
 
-func (b Board) SelectBoardCells(cellMatches cellFilter) (cells []Cell) {
+func (b Board) SelectBoardCells(cellMatches cellFilter) (cells Unit) {
 	return SelectCells(b.AllCells(), cellMatches)
 }
 
-func SelectCells(fromCells []Cell, cellMatches cellFilter) (cells []Cell) {
+func SelectCells(fromCells Unit, cellMatches cellFilter) (cells Unit) {
 	for _, cell := range fromCells {
 		if cellMatches(cell) {
 			cells = append(cells, cell)
@@ -129,25 +129,25 @@ func SelectCells(fromCells []Cell, cellMatches cellFilter) (cells []Cell) {
 	return cells
 }
 
-func MapCellValues(fromCells []Cell) (cells []int) {
+func MapCellValues(fromCells Unit) (cells []int) {
 	for _, cell := range fromCells {
 		cells = append(cells, cell.Value())
 	}
 	return cells
 }
 
-func (b Board) RowForCell(c Cell) []Cell {
+func (b Board) RowForCell(c Cell) Unit {
 	return b.cells[c.Y()][:]
 }
 
-func (b Board) column(colIdx int) (seq []Cell) {
+func (b Board) column(colIdx int) (seq Unit) {
 	for _, row := range b.cells {
 		seq = append(seq, row[colIdx])
 	}
 	return seq
 }
 
-func (b Board) ColForCell(c Cell) (seq []Cell) {
+func (b Board) ColForCell(c Cell) (seq Unit) {
 	return b.column(c.X())
 }
 
@@ -162,7 +162,7 @@ func groupIdxFor(x, y int) int {
 	return (y / 3 * 3) + x/3
 }
 
-func (b Board) group(idx int) (seq []Cell) {
+func (b Board) group(idx int) (seq Unit) {
 	// TODO: Better way to do this with slices?
 	xMin, xMax, yMin, yMax := groupBounds(idx)
 	for row := yMin; row <= yMax; row++ {
@@ -173,11 +173,13 @@ func (b Board) group(idx int) (seq []Cell) {
 	return seq
 }
 
-func (b Board) GroupForCell(c Cell) (seq []Cell) {
+func (b Board) GroupForCell(c Cell) (seq Unit) {
 	return b.group(groupIdxFor(c.X(), c.Y()))
 }
 
-func (b Board) Sequences() (seqs [][]Cell) {
+type Unit []Cell
+
+func (b Board) Units() (seqs []Unit) {
 	// Rows
 	for _, r := range b.cells {
 		seqs = append(seqs, r)
@@ -192,18 +194,18 @@ func (b Board) Sequences() (seqs [][]Cell) {
 	return seqs
 }
 
-func (b Board) SequencesForCell(c Cell) (seqs [][]Cell) {
+func (b Board) UnitsForCell(c Cell) (seqs [][]Cell) {
 	seqs = append(seqs, b.ColForCell(c))
 	seqs = append(seqs, b.RowForCell(c))
 	seqs = append(seqs, b.GroupForCell(c))
 	return seqs
 }
 
-func (b Board) SequenceCellsForCell(c Cell) (seqs []Cell) {
-	return flatten(b.SequencesForCell(c))
+func (b Board) UnitCellsForCell(c Cell) (seqs Unit) {
+	return flatten(b.UnitsForCell(c))
 }
 
-func flatten(nestedCells [][]Cell) (cells []Cell) {
+func flatten(nestedCells [][]Cell) (cells Unit) {
 	for _, row := range nestedCells {
 		for _, cell := range row {
 			cells = append(cells, cell)

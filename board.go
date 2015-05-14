@@ -1,4 +1,4 @@
-package sudoku
+package gosudoku
 
 import (
 	"bytes"
@@ -19,7 +19,7 @@ func BoardFromArray(a [][]int) (b *Board, err error) {
 	b = new(Board)
 	for y, row := range a {
 		for x, val := range row {
-			b.cells[y][x] = CellFactory(b, x, y, val)
+			b.cells[y][x] = CellFactory(x, y, val)
 		}
 	}
 	return b, err
@@ -39,7 +39,7 @@ func BoardFromString(s string) (b *Board, err error) {
 				if err != nil {
 					val = sval
 				}
-				b.cells[row][col] = CellFactory(b, col, row, val)
+				b.cells[row][col] = CellFactory(col, row, val)
 			}
 		}
 	}
@@ -205,5 +205,5 @@ func (b Board) String() string {
 func (b Board) ReplaceCellWithNewValueCell(oldCell Cell, val int) {
 	x := oldCell.X()
 	y := oldCell.Y()
-	b.cells[y][x] = newValueCell(&b, x, y, val)
+	b.cells[y][x] = newValueCell(x, y, val)
 }

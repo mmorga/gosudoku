@@ -1,4 +1,4 @@
-package sudoku
+package gosudoku
 
 func (b Board) NakedSingles() bool {
 	foundAny := false
@@ -17,17 +17,6 @@ func (b Board) NakedSingles() bool {
 		}
 	}
 	return foundAny
-}
-
-func ValueCellAt(cell CandidateCell) Cell {
-	return valueCell{
-		baseCell: baseCell{
-			board: cell.Board(),
-			x:     cell.X(),
-			y:     cell.Y(),
-		},
-		value: cell.Candidates()[0],
-	}
 }
 
 func NakedSinglesUnit(unit Unit) (updatedCells Unit) {

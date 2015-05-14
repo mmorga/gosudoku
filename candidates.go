@@ -1,4 +1,4 @@
-package sudoku
+package gosudoku
 
 import "sort"
 
@@ -22,15 +22,6 @@ func CandidatesContainAny(candidates []int, vals []int) bool {
 			if val == candidate {
 				return true
 			}
-		}
-	}
-	return false
-}
-
-func hasVal(vals []int, val int) bool {
-	for _, v := range vals {
-		if v == val {
-			return true
 		}
 	}
 	return false

@@ -1,4 +1,4 @@
-package sudoku
+package gosudoku
 
 func (b Board) HiddenSingles() bool {
 	foundAny := false
@@ -20,6 +20,20 @@ func (b Board) HiddenSingles() bool {
 		}
 	}
 	return foundAny
+}
+
+func HiddenSinglesUnit(unit Unit) (updatedCells Unit) {
+	candidateCells := SelectCells(unit, isCandidateCell)
+	candidateVals := candidateVals(candidateCells)
+	for _, val := range candidateVals {
+		hasValCells := CandidateCellsWithAnyValues(candidateCells, []int{val})
+		if len(hasValCells) == 1 {
+			if candidateCell, ok := hasValCells[0].(CandidateCell); ok {
+				updatedCells = append(updatedCells, ValueCellAt(candidateCell))
+			}
+		}
+	}
+	return updatedCells
 }
 
 // # Hidden n strategy

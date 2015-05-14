@@ -11,4 +11,4 @@ as part of a long-lived real-life project.
 I'm not trying to make the fastest solution, but to model some real-world
 strategies and most importantly to explore language features.
 */
-package sudoku
+package gosudoku

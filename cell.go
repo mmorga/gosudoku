@@ -1,11 +1,10 @@
-package sudoku
+package gosudoku
 
 import "sort"
 
 type Cell interface {
 	X() int
 	Y() int
-	Board() *Board
 	Value() int
 	Equal(Cell) bool
 }
@@ -13,12 +12,11 @@ type Cell interface {
 type CandidateCell interface {
 	Cell
 	Candidates() []int
-	ReduceCandidates([]int)
+	ReduceCandidates([]int) bool
 }
 
 type baseCell struct {
-	board *Board
-	x, y  int
+	x, y int
 }
 
 type candidateCell struct {
@@ -43,24 +41,24 @@ func (b baseCell) Y() int {
 	return b.y
 }
 
-func (b baseCell) Board() *Board {
-	return b.board
-}
-
 func (b baseCell) Value() int {
 	return 0
 }
 
 func (b baseCell) Equal(c1 Cell) bool {
-	return b.Board() == c1.Board() &&
-		b.X() == c1.X() &&
+	return b.X() == c1.X() &&
 		b.Y() == c1.Y()
 }
 
-func (c candidateCell) ReduceCandidates(vals []int) {
+func (c candidateCell) ReduceCandidates(vals []int) bool {
+	var result = false
 	for _, v := range vals {
+		if c.candidates[v] {
+			result = true
+		}
 		delete(c.candidates, v)
 	}
+	return result
 }
 
 func (c candidateCell) Candidates() (candidates []int) {
@@ -75,62 +73,59 @@ func (v valueCell) Value() int {
 	return v.value
 }
 
-func CellFactory(b *Board, x int, y int, val interface{}) (cell Cell) {
+func CellFactory(x int, y int, val interface{}) (cell Cell) {
 	switch val := val.(type) {
 	case []int:
-		cell = newCandidateCell(b, x, y, val)
+		cell = newCandidateCell(x, y, val)
 	case int:
 		if val >= 1 && val <= 9 {
-			cell = newFixedCell(b, x, y, val)
+			cell = newFixedCell(x, y, val)
 		} else {
-			cell = newAllCandidatesCell(b, x, y)
+			cell = newAllCandidatesCell(x, y)
 		}
 	case string:
-		cell = newAllCandidatesCell(b, x, y)
+		cell = newAllCandidatesCell(x, y)
 	}
 	return cell
 }
 
-func newFixedCell(b *Board, x int, y int, val int) (cell Cell) {
+func newFixedCell(x int, y int, val int) (cell Cell) {
 	return fixedCell{
 		valueCell: valueCell{
 			baseCell: baseCell{
-				board: b,
-				x:     x,
-				y:     y,
+				x: x,
+				y: y,
 			},
 			value: val,
 		},
 	}
 }
 
-func newValueCell(b *Board, x int, y int, val int) (cell Cell) {
+func newValueCell(x int, y int, val int) (cell Cell) {
 	return valueCell{
 		baseCell: baseCell{
-			board: b,
-			x:     x,
-			y:     y,
+			x: x,
+			y: y,
 		},
 		value: val,
 	}
 }
 
-func newCandidateCell(b *Board, x int, y int, val []int) (cell Cell) {
+func newCandidateCell(x int, y int, val []int) (cell Cell) {
 	candidates := make(map[int]bool, len(val))
 	for _, key := range val {
 		candidates[key] = true
 	}
 	return candidateCell{
 		baseCell: baseCell{
-			board: b,
-			x:     x,
-			y:     y,
+			x: x,
+			y: y,
 		},
 		candidates: candidates,
 	}
 }
 
-func newAllCandidatesCell(b *Board, x int, y int) (cell Cell) {
+func newAllCandidatesCell(x int, y int) (cell Cell) {
 	candidates := map[int]bool{
 		1: true,
 		2: true,
@@ -144,10 +139,19 @@ func newAllCandidatesCell(b *Board, x int, y int) (cell Cell) {
 	}
 	return candidateCell{
 		baseCell: baseCell{
-			board: b,
-			x:     x,
-			y:     y,
+			x: x,
+			y: y,
 		},
 		candidates: candidates,
+	}
+}
+
+func ValueCellAt(cell CandidateCell) Cell {
+	return valueCell{
+		baseCell: baseCell{
+			x: cell.X(),
+			y: cell.Y(),
+		},
+		value: cell.Candidates()[0],
 	}
 }

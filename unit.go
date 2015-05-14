@@ -1,4 +1,4 @@
-package sudoku
+package gosudoku
 
 type Unit []Cell
 
@@ -46,19 +46,19 @@ func CellInUnit(cell Cell, unit Unit) bool {
 	return false
 }
 
-func RemoveCandidatesFromUnitExceptForCells(pair []int, unit Unit, exceptCells Unit) bool {
-	found := false
+func RemoveCandidatesFromUnitExceptForCells(pair []int, unit Unit, exceptCells Unit) (updatedCells Unit) {
 	for _, cell := range unit {
 		if candidateCell, ok := cell.(CandidateCell); ok {
 			if !CellInUnit(cell, exceptCells) {
 				if CandidatesContainAny(candidateCell.Candidates(), pair) {
-					candidateCell.ReduceCandidates(pair)
-					found = true
+					if candidateCell.ReduceCandidates(pair) {
+						updatedCells = append(updatedCells, cell)
+					}
 				}
 			}
 		}
 	}
-	return found
+	return updatedCells
 }
 
 func FlattenUnitSlice(nestedCells []Unit) (unit Unit) {

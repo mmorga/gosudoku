@@ -1,4 +1,4 @@
-package sudoku
+package gosudoku
 
 // This one is a unit oriented strategy
 
@@ -12,6 +12,8 @@ package sudoku
 func (b Board) NakedPairs() bool {
 	foundAny := false
 	found := true
+	var allUpdatedCells Unit
+
 	for found {
 		b.ReduceCandidates()
 		found = false
@@ -19,7 +21,11 @@ func (b Board) NakedPairs() bool {
 			for _, pair := range UniquePairsInUnit(unit) {
 				nakedCells := CandidateCellsWithValues(unit, pair)
 				if len(nakedCells) == 2 {
-					if RemoveCandidatesFromUnitExceptForCells(pair, unit, nakedCells) {
+					updatedCells := RemoveCandidatesFromUnitExceptForCells(pair, unit, nakedCells)
+					// for cell := range updatedCells {
+					allUpdatedCells = append(allUpdatedCells, updatedCells...)
+					// }
+					if len(updatedCells) > 0 {
 						found = true
 						foundAny = true
 					}
@@ -28,4 +34,15 @@ func (b Board) NakedPairs() bool {
 		}
 	}
 	return foundAny
+}
+
+func NakedPairsUnit(unit Unit) (updatedCells Unit) {
+	for _, pair := range UniquePairsInUnit(unit) {
+		nakedCells := CandidateCellsWithValues(unit, pair)
+		if len(nakedCells) == 2 {
+			updatedCells = append(updatedCells,
+				RemoveCandidatesFromUnitExceptForCells(pair, unit, nakedCells)...)
+		}
+	}
+	return updatedCells
 }

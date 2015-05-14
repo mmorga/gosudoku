@@ -1,4 +1,4 @@
-package sudoku
+package gosudoku
 
 const version = "0.0.1"
 
